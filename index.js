@@ -1,19 +1,17 @@
-import express, { request, response } from "express";
+import express from "express";
 import morgan from "morgan";
 import cors from "cors";
 
 const PORT = process.env.PORT || 3001;
 const app = express();
 
-morgan.token("body", function(request, response){
-    return JSON.stringify(request.body);
+morgan.token("body", function (req, res) {
+  return JSON.stringify(req.body);
 });
 
-
-app.use(cors);
-app.use(express.json()); //understand json
-// app.use(logger); // convert it to middleware
-app.use(morgan(":method :url :status :res[content-length] - :response-time ms"));
+app.use(cors());
+app.use(express.json());
+app.use(morgan(":method :url :status :body"));
 
 let notes = [
     {
@@ -50,64 +48,63 @@ let notes = [
     notes/:id       PATCH   replaces a part of the identified resource
 */
 
-// function logger(request, response, next){
-//     console.log(`Method: ${request.method}`);
-//     console.log(`Path: ${request.path}`);
-//     console.log(`Body: ${JSON.stringify(request.body)}`);
-//     console.log("----------------------");
-//     next();
-// };
-
-function unknownEndPoint(request, response){
-    return request.status(404).send({error:"unknown endpoint"});
-}
-
-function generateId(){
-    const  maxId = notes.length > 0 ? Math.max(...notes.map(n=>n.id)):0;
-    return maxId + 1; 
-};
-
-app.get("/",(request,response)=>{
-    return response.send("<h1>Hello from NodeJS!</h1>");
-});
-
-app.get("/notes",(request, response)=>{
-    return response.json(notes);
-});
-
-app.get("/notes/:id",(request, response)=>{
-    const id = Number(request.params.id);
-    const note = notes.find(note => note.id===id);
-    return response.json(note);
-});
-
-app.delete("/notes/:id",(request, response)=>{
-    const id = Number(request.params.id);
-    notes = notes.filter((note)=>note.id !==id);
-
-    return response.status(204).end();
-});
-
-app.post("/notes",(request, response)=>{
-    
-    const body = request.body;
-
-    if(!body.content){
-        return response.status(400).json({error:"content missing"});    
-    }    
-
-   const note = {
-        content: body.content,
-        important: body.important || false,
-        id: generateId()
-   }
-   notes = notes.concat(note);
-
-    return response.status(201).json(note);
-});
-
-app.use(unknownEndPoint);
-
-app.listen(PORT, ()=>{
-    console.log(`Server is now running on port ${PORT}`);   
-});
+function unknownEndpoint(req, res) {
+    return res.status(404).send({ error: "unknown endpoint" });
+  }
+  
+  function generateId() {
+    const maxId = notes.length > 0 ? Math.max(...notes.map((n) => n.id)) : 0;
+    return maxId + 1;
+  }
+  
+  app.get("/", (req, res) => {
+    return res.send("<h1>Hello from ExpressJS!</h1>");
+  });
+  
+  app.get("/notes/info", (req, res) => {
+    const notesCount = notes.length;
+  
+    return res.send(`<p>Notes App have ${notesCount} notes</p>`);
+  });
+  
+  app.get("/notes", (req, res) => {
+    return res.json(notes);
+  });
+  
+  app.get("/notes/:id", (req, res) => {
+    const id = Number(req.params.id);
+    const note = notes.find((note) => note.id === id);
+  
+    return res.json(note);
+  });
+  
+  app.delete("/notes/:id", (req, res) => {
+    const id = Number(req.params.id);
+    notes = notes.filter((note) => note.id !== id);
+  
+    return res.status(204).end();
+  });
+  
+  app.post("/notes", (req, res) => {
+    const body = req.body;
+  
+    if (!body.content) {
+      return res.status(400).json({ error: "content missing" });
+    }
+  
+    const note = {
+      content: body.content,
+      important: body.important || false,
+      id: generateId(),
+    };
+  
+    notes = notes.concat(note);
+  
+    return res.status(201).json(note);
+  });
+  
+  app.use(unknownEndpoint);
+  
+  app.listen(PORT, () => {
+    console.log(`Server is now running on port ${PORT}`);
+  });
